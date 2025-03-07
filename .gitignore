@@ -1,4 +1,3 @@
 *.csv
 FilmEmotionRecommender/
-*.csv
-*.csv
+*.parquet
