@@ -8,28 +8,20 @@
 
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+
 
 # Título da aplicação
-st.title("Minha Aplicação Streamlit")
+st.title("Minha Primeira Aplicação com Streamlit")
 
-# Upload de arquivo CSV
-arquivo = st.file_uploader("Envie um arquivo CSV", type="csv")
+# Texto simples
+st.write("Olá, mundo! Esta é minha primeira aplicação Streamlit.")
 
-if arquivo is not None:
-    # Carregar dados
-    df = pd.read_csv(arquivo)
-    
-    # Exibir DataFrame
-    st.write("Dados carregados:")
-    st.write(df.head())
-    
-    # Criar gráfico
-    st.write("Gráfico de linhas:")
-    fig, ax = plt.subplots()
-    ax.plot(df["coluna_x"], df["coluna_y"])
-    ax.set_title("Gráfico de Linhas")
-    st.pyplot(fig)
+# Slider para entrada de dados
+numero = st.slider("Escolha um número", 0, 100)
+
+# Exibir o número escolhido
+st.write(f"Você escolheu o número: {numero}")
+
 
 # In[ ]:
 
