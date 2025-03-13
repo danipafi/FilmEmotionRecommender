@@ -1,19 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pandas as pd
 import dask.dataframe as dd
 import os
 import re
-import ast
 import streamlit as st
 from PIL import Image
 import requests
 from io import BytesIO
 from bs4 import BeautifulSoup
+import ast  # Import necessário para conversão de string para lista/tupla
 
 # Function to normalize names
 def normalize_name(name):
@@ -25,19 +19,33 @@ def normalize_name(name):
 def generate_rotten_tomatoes_url(movie_id):
     return f"https://www.rottentomatoes.com/m/{movie_id}"
 
-# Function to extract the movie poster URL
+# Function to extract the movie poster URL from the photos page
+
+
 def get_movie_poster_url(movie_id):
-    url = f"https://www.rottentomatoes.com/m/{movie_id}/pictures"
-    response = requests.get(url)
+    # Acessa a página principal do filme, que geralmente contém a meta tag "og:image"
+    url = f"https://www.rottentomatoes.com/m/{movie_id}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
     if response.status_code != 200:
         return None
+    
     soup = BeautifulSoup(response.text, 'html.parser')
-    poster_div = soup.find('div', {'class': 'movie_poster'})
-    if poster_div:
-        img_tag = poster_div.find('img')
-        if img_tag:
-            return img_tag['src']
+    
+    # Tenta extrair a URL do pôster pela meta tag "og:image"
+    meta_tag = soup.find('meta', property="og:image")
+    if meta_tag and meta_tag.get('content'):
+        return meta_tag['content']
+    
+    # Se não encontrar pela meta tag, tenta buscar a imagem pela classe antiga
+    poster_img = soup.find('img', {'class': 'posterImage'})
+    if poster_img and 'src' in poster_img.attrs:
+        return poster_img['src']
+    
     return None
+
 
 # Function to load and display movie posters
 def display_poster(poster_url):
@@ -49,8 +57,8 @@ def display_poster(poster_url):
                 st.image(img, width=150)  # Display the image
             else:
                 st.write("Poster not available")  # If the URL is invalid
-        except:
-            st.write("Poster not available")  # If there's an error loading the image
+        except Exception as e:
+            st.write(f"Error loading poster: {e}")  # If there's an error loading the image
     else:
         st.write("Poster not available")  # If the URL is missing
 
@@ -60,6 +68,10 @@ def load_data():
     # Load DataFrames
     reviews = pd.read_csv('/Users/danielebelmiro/Data_Analytics_Bootcamp/Rotten/reviews_emotions.csv')
     movies = pd.read_csv('/Users/danielebelmiro/Data_Analytics_Bootcamp/Rotten/movies_final.csv')
+
+    # Converter as colunas 'genre' e 'emotions' de string para lista/tupla
+    movies['genre'] = movies['genre'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+    movies['emotions'] = movies['emotions'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
 
     # Carregar a matriz reduzida
     df_final = dd.read_parquet('/Users/danielebelmiro/Data_Analytics_Bootcamp/Rotten/processed_chunks').compute()  # Convertendo para pandas para facilitar a validação
@@ -96,11 +108,10 @@ def recommend_similar_movies(df_final, movies, reviews, favorite_movie, top_n=5)
     # Display the emotional profile of the favorite movie
     favorite_movie_emotions = matching_movies.iloc[0]['emotions']
     st.subheader(f"Emotional profile of '{favorite_movie_title}':")
-    if isinstance(favorite_movie_emotions, list):
-        st.write(f"   ❤️ Emotions: {', '.join([f'{mood} ({percentage:.1f}%)' for mood, percentage in favorite_movie_emotions])}")
-    else:
-        st.write(f"   ❤️ Emotions: {favorite_movie_emotions}")
-
+    st.write(
+        ", ".join([f"{mood}: {percentage:.1f}%" for mood, percentage in favorite_movie_emotions])
+    )
+    
     # Display recommendations
     st.subheader(f"Top {top_n} recommendations based on '{favorite_movie_title}':")
     for _, row in recommended_movies.iterrows():
@@ -114,15 +125,17 @@ def recommend_similar_movies(df_final, movies, reviews, favorite_movie, top_n=5)
             st.write(f"   🎬 **Director:** {row['director']}")
             st.write(f"   🌍 **Language:** {row['originalLanguage']}")
             st.write(f"   ⏳ **Duration:** {row['runtimeMinutes']} min")
-            st.write(f"   🎭 **Genre:** {', '.join(row['genre'])}")
+            st.write(
+                f"   🎭 **Genre:** {', '.join(row['genre']) if isinstance(row['genre'], (list, tuple)) else row['genre']}"
+            )
             st.write(f"   📅 **Year:** {row['release_year']}")
             st.write(f"   🍅 **Tomatometer:** {row['tomatoMeter']}%")
             st.write(f"   🎟️ **Audience Score:** {row['audienceScore']}%")
             st.write(f"   🔗 **Similarity Score:** {row['score']:.5f}")
-            if isinstance(row['emotions'], list):
-                st.write(f"   ❤️ **Emotions:** {', '.join([f'{mood} ({percentage:.1f}%)' for mood, percentage in row['emotions']])}")
-            else:
-                st.write(f"   ❤️ **Emotions:** {row['emotions']}")
+            st.write(
+                f"   ❤️ **Emotional Profile:** {', '.join([f'{mood}: {percentage:.1f}%' for mood, percentage in row['emotions']]) if isinstance(row['emotions'], (list, tuple)) else row['emotions']}"
+            )
+
             # Add link to Rotten Tomatoes using the movie ID
             rotten_tomatoes_url = generate_rotten_tomatoes_url(row['id'])
             st.write(f"   🍅 [Link to Rotten Tomatoes]({rotten_tomatoes_url})")
@@ -158,7 +171,6 @@ def main():
     # Load data
     movies, reviews, df_final = load_data()
 
-
     # User input for recommendations
     favorite_movie = st.text_input("Enter the name of your favorite movie:")
     top_n = st.slider("How many recommendations do you want?", 1, 5, 3)
@@ -169,10 +181,3 @@ def main():
 # Run the application
 if __name__ == "__main__":
     main()
-
-
-# In[ ]:
-
-
-
-
