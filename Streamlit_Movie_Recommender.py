@@ -130,7 +130,7 @@ def render_movie_card(movie, poster_url, is_favorite=False):
     If is_favorite is True, uses a larger poster and omits the similarity score.
     The movie title is displayed prominently (aligned to the left).
     """
-    poster_width = 260
+    poster_width = 240
     similarity_line = "" if is_favorite else f"<p><strong>🔗 Similarity Score:</strong> {movie.get('score', 0):.5f}</p>"
     if isinstance(movie['emotions'], (list, tuple)):
         emotional_profile_str = ", ".join([f"{mood}: {percentage:.1f}%" for mood, percentage in movie['emotions']])
