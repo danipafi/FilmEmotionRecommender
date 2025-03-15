@@ -1,3 +1,4 @@
 *.csv
 FilmEmotionRecommender/
 *.parquet
+Charts/streamlit.mov
