@@ -61,7 +61,9 @@ This command opens a local browser window with the demo app.
 
 - [Rotten Tomatoes Official Site](https://www.rottentomatoes.com/)
 - [Hugging Face – RoBERTa-base-go_emotions](https://huggingface.co/SamLowe/roberta-base-go_emotions)
-- [“Stream Fatigue” & Business Wire Surveys](https://www.businesswire.com)
+- [Lost in the Stream](https://www.businesswire.com/news/home/20241218932475/en/Lost-in-the-Stream-Survey-Finds-Americans-Waste-Nearly-Five-Days-a-Year-Just-Deciding-What-to-Watch)
+- [Massive Rotten Tomatoes Movies & Reviews](https://www.kaggle.com/datasets/andrezaza/clapper-massive-rotten-tomatoes-movies-and-reviews?resource=download)
+- [How Recommendation Algorithms Work](https://www.scientificamerican.com/article/how-recommendation-algorithms-work-and-why-they-may-miss-the-mark/)
 
 ## License
 
